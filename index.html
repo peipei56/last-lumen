@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#04050c">
+<meta name="description" content="LAST LUMEN — 闇の中で最後の光として生き残る、ブラウザ用ローグライト・サバイバーアクション。">
+<title>LAST LUMEN</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--app-->
+<div id="app">
+  <canvas id="cv"></canvas>
+
+  <div id="hud" hidden>
+    <div id="xpbar"><i id="xpfill"></i></div>
+    <div class="hud-top">
+      <div class="hud-left">
+        <div class="lv">Lv <b id="hLv">1</b></div>
+        <div id="hpbar"><i id="hpfill"></i><span id="hpText">100</span></div>
+      </div>
+      <div id="hTime">0:00</div>
+      <div class="hud-right">
+        <span title="kills">☠ <b id="hKills">0</b></span>
+        <span title="stardust" class="gold">✦ <b id="hDust">0</b></span>
+        <button id="pauseBtn" type="button" aria-label="Pause">Ⅱ</button>
+      </div>
+    </div>
+    <div id="bossbar" hidden><span data-i18n="boss"></span><div><i id="bossfill"></i></div></div>
+    <div id="banner" hidden></div>
+    <div id="build"></div>
+  </div>
+
+  <div id="stick" hidden><i></i></div>
+  <button id="dashBtn" type="button" hidden>DASH</button>
+
+  <section id="title" class="screen">
+    <div class="panel">
+      <header>
+        <h1>LAST<br><em>LUMEN</em></h1>
+        <p class="tagline" data-i18n="tagline"></p>
+      </header>
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="run" data-i18n="tabRun" aria-selected="true"></button>
+        <button type="button" role="tab" data-tab="shop" data-i18n="tabShop" aria-selected="false"></button>
+        <button type="button" role="tab" data-tab="help" data-i18n="tabHelp" aria-selected="false"></button>
+        <span class="wallet gold">✦ <b id="wallet">0</b></span>
+      </nav>
+      <div class="tabpane" id="tab-run">
+        <h2 data-i18n="chooseChar"></h2>
+        <div id="chars"></div>
+        <p id="best" class="mute"></p>
+        <button id="startBtn" type="button" class="primary" data-i18n="start"></button>
+      </div>
+      <div class="tabpane" id="tab-shop" hidden>
+        <p class="mute" data-i18n="shopLead"></p>
+        <div id="shop"></div>
+      </div>
+      <div class="tabpane" id="tab-help" hidden>
+        <ul class="help">
+          <li data-i18n="help1"></li>
+          <li data-i18n="help2"></li>
+          <li data-i18n="help3"></li>
+          <li data-i18n="help4"></li>
+          <li data-i18n="help5"></li>
+        </ul>
+      </div>
+      <footer>
+        <button id="soundBtn" type="button" class="ghost"></button>
+        <button id="langBtn" type="button" class="ghost" data-i18n="lang"></button>
+      </footer>
+    </div>
+  </section>
+
+  <section id="levelup" class="screen modal" hidden>
+    <div class="sheet">
+      <h2 id="luTitle"></h2>
+      <p class="mute" data-i18n="pick"></p>
+      <div id="cards"></div>
+      <button id="rerollBtn" type="button" class="ghost"></button>
+    </div>
+  </section>
+
+  <section id="pause" class="screen modal" hidden>
+    <div class="sheet narrow">
+      <h2 data-i18n="paused"></h2>
+      <div id="pauseBuild" class="buildlist"></div>
+      <div class="row">
+        <button id="resumeBtn" type="button" class="primary" data-i18n="resume"></button>
+        <button id="quitBtn" type="button" class="ghost" data-i18n="giveUp"></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="over" class="screen modal" hidden>
+    <div class="sheet narrow">
+      <h2 id="overTitle"></h2>
+      <dl id="stats"></dl>
+      <h3 data-i18n="dmgBy"></h3>
+      <div id="dmgChart"></div>
+      <p id="unlockNote" class="gold" hidden></p>
+      <div class="row">
+        <button id="endlessBtn" type="button" class="primary" data-i18n="endless" hidden></button>
+        <button id="retryBtn" type="button" class="primary" data-i18n="retry"></button>
+        <button id="titleBtn" type="button" class="ghost" data-i18n="toTitle"></button>
+      </div>
+    </div>
+  </section>
+</div>
+<!--/app-->
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

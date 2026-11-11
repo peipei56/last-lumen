@@ -123,8 +123,8 @@ h3 { font-size: 0.8rem; letter-spacing: 0.14em; color: var(--mute); text-transfo
 .panel h1 { font-size: clamp(3rem, 13vw, 4.6rem); line-height: 0.92; letter-spacing: 0.04em; font-weight: 700; }
 .panel h1 em { font-style: normal; color: var(--lumen); text-shadow: 0 0 34px rgba(127, 233, 255, 0.7); }
 .tagline { margin: 12px 0 0; color: var(--mute); }
-.tabs { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--mute); padding: 0.5em 0.9em; font-family: var(--display); letter-spacing: 0.08em; }
+.tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--mute); padding: 0.5em 0.7em; font-family: var(--display); letter-spacing: 0.08em; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--lumen); }
 .wallet { margin-left: auto; font-family: var(--display); font-variant-numeric: tabular-nums; }
 .tabpane { display: flex; flex-direction: column; gap: 14px; flex: 1; }
@@ -141,6 +141,26 @@ h3 { font-size: 0.8rem; letter-spacing: 0.14em; color: var(--mute); text-transfo
 .shoprow .pips { color: var(--gold); letter-spacing: 2px; font-size: 0.7rem; }
 .shoprow button { font-family: var(--display); font-variant-numeric: tabular-nums; min-width: 78px; }
 .shoprow button:disabled { opacity: 0.4; cursor: not-allowed; }
+.small { font-size: 0.8rem; margin: 0; }
+.namefield { display: flex; align-items: center; gap: 10px; color: var(--mute); font-size: 0.85rem; }
+.namefield input {
+  flex: 1; min-width: 0; font: inherit; color: var(--ink); background: rgba(127, 233, 255, 0.06);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0.45em 0.7em; -webkit-user-select: text; user-select: text;
+}
+.namefield input:focus-visible { outline: 2px solid var(--lumen); outline-offset: 1px; }
+#ranks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+#ranks li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 10px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+#ranks li.latest { background: rgba(255, 226, 122, 0.08); box-shadow: inset 2px 0 0 var(--gold); }
+#ranks .place { font-family: var(--display); font-weight: 700; font-size: 1.1rem; color: var(--mute); text-align: center; }
+#ranks li:nth-child(1) .place { color: var(--gold); }
+#ranks li:nth-child(2) .place { color: #d5dcec; }
+#ranks li:nth-child(3) .place { color: #e0a070; }
+#ranks .who { min-width: 0; display: flex; flex-direction: column; line-height: 1.35; }
+#ranks .who b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ranks .pts { text-align: right; display: flex; flex-direction: column; line-height: 1.35; }
+#ranks .pts b { font-family: var(--display); font-size: 1.05rem; }
+#ranks small { color: var(--mute); font-size: 0.75rem; }
+#rankClearBtn { align-self: flex-start; font-size: 0.8rem; }
 .help { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
 .panel footer { display: flex; gap: 8px; margin-top: auto; }
 

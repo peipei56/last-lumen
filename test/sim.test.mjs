@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Game } from '../src/game.js';
 import { botInput } from '../src/bot.js';
+import { addRank, placeOf, cleanRanks, RANK_MAX } from '../src/ranking.js';
 import { WEAPONS, PASSIVES, wstat, TEXT, CHARS, META, WEAPON_MAX_LV } from '../src/data.js';
 
 export function run(seed, charId = 'lumi', maxT = 900, meta = {}) {
@@ -89,4 +90,31 @@ test('a full 15 minute run simulates far faster than real time', () => {
   const ms = performance.now() - t0;
   assert.ok(peak <= 460, 'enemy cap respected, peak ' + peak);
   assert.ok(ms < g.t * 1000 * 0.5, `sim too slow: ${ms.toFixed(0)}ms for ${g.t.toFixed(0)}s`);
+});
+
+test('score grows with the run and is an integer', () => {
+  const a = run(3, 'lumi', 30).g, b = run(3, 'lumi', 120).g;
+  assert.ok(Number.isInteger(a.score()) && a.score() > 0);
+  assert.ok(b.score() > a.score());
+});
+
+test('ranking keeps the top runs in order', () => {
+  const list = [];
+  assert.equal(addRank(list, { score: 500, time: 1 }), 1);
+  assert.equal(addRank(list, { score: 900, time: 1 }), 1);
+  assert.equal(addRank(list, { score: 700, time: 1 }), 2);
+  assert.equal(addRank(list, { score: 700, time: 2 }), 3, 'a tie ranks below the earlier run');
+  assert.deepEqual(list.map((e) => e.score), [900, 700, 700, 500]);
+  for (let i = 0; i < 20; i++) addRank(list, { score: 1000 + i, time: 1 });
+  assert.equal(list.length, RANK_MAX);
+  assert.equal(list[0].score, 1019);
+  assert.equal(addRank(list, { score: 1 , time: 1 }), 0, 'a low score does not make a full list');
+  assert.equal(placeOf(list, 99999), 1);
+  for (let i = 1; i < list.length; i++) assert.ok(list[i - 1].score >= list[i].score);
+});
+
+test('damaged ranking data is cleaned up', () => {
+  assert.deepEqual(cleanRanks('nope'), []);
+  const out = cleanRanks([{ score: 5, time: 1 }, null, { score: 'x' }, { score: 9, time: 2 }]);
+  assert.deepEqual(out.map((e) => e.score), [9, 5]);
 });

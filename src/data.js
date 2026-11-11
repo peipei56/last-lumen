@@ -102,7 +102,10 @@ export const TEXT = {
   ja: {
     tagline: '闇に呑まれた宙域で、最後の光として生き残れ。',
     start: '出撃',
-    tabRun: '出撃', tabShop: '強化', tabHelp: '遊び方',
+    tabRun: '出撃', tabShop: '強化', tabRank: 'ランキング', tabHelp: '遊び方',
+    rankName: 'プレイヤー名', rankAnon: '名無し', rankEmpty: 'まだ記録がありません。出撃して最初の記録を残そう。',
+    rankNote: '上位10件をこのブラウザに保存します。', rankIn: '{n}位にランクイン', rankClear: '記録を消す', rankClearSure: 'もう一度押すと消去',
+    sScore: 'スコア',
     chooseChar: '光核を選ぶ',
     locked: '未解放',
     unlock_time300: '5分生存で解放',
@@ -159,7 +162,10 @@ export const TEXT = {
   en: {
     tagline: 'The void has swallowed everything. Be the last light.',
     start: 'Launch',
-    tabRun: 'Launch', tabShop: 'Upgrades', tabHelp: 'How to play',
+    tabRun: 'Launch', tabShop: 'Upgrades', tabRank: 'Ranking', tabHelp: 'How to play',
+    rankName: 'Player name', rankAnon: 'Anonymous', rankEmpty: 'No runs yet. Launch to set the first record.',
+    rankNote: 'The top 10 runs are saved in this browser.', rankIn: 'Ranked #{n}', rankClear: 'Clear records', rankClearSure: 'Press again to erase',
+    sScore: 'Score',
     chooseChar: 'Choose a core',
     locked: 'Locked',
     unlock_time300: 'Survive 5 minutes',

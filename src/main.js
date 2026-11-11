@@ -4,6 +4,7 @@ import { Renderer } from './render.js';
 import { Sound } from './audio.js';
 import { Input } from './input.js';
 import { botInput } from './bot.js';
+import { addRank, placeOf, cleanRanks, RANK_MAX } from './ranking.js';
 import { WEAPONS, PASSIVES, CHARS, META, TEXT, metaCost, WEAPON_MAX_LV, PASSIVE_MAX_LV, BOSSES_TO_WIN } from './data.js';
 
 const $ = (id) => document.getElementById(id);
@@ -11,7 +12,7 @@ const STEP = 1 / 60;
 const SAVE_KEY = 'last-lumen-save-v1';
 
 // ------------------------------------------------------------------ save data
-const save = { dust: 0, meta: {}, unlocked: {}, best: null, lang: null, sound: true, char: 'lumi' };
+const save = { dust: 0, meta: {}, unlocked: {}, best: null, lang: null, sound: true, char: 'lumi', ranks: [], name: '' };
 try {
   Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
 } catch {}
@@ -25,6 +26,10 @@ const T = (k) => TEXT[lang][k] ?? k;
 const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const isUnlocked = (id) => !CHARS[id].unlock || !!save.unlocked[id];
 if (!CHARS[save.char] || !isUnlocked(save.char)) save.char = 'lumi';
+save.ranks = cleanRanks(save.ranks);
+save.name = typeof save.name === 'string' ? save.name.slice(0, 12) : '';
+let latestRank = null; // the entry added by the most recent run, highlighted in the list
+let lastPlace = 0;
 
 // ------------------------------------------------------------------ systems
 const canvas = $('cv');
@@ -103,6 +108,8 @@ function renderTitle() {
   const best = save.best;
   $('best').textContent = best ? `${T('best')}: ${fmtTime(best.time)} · Lv ${best.level} · ☠ ${best.kills}` : `${T('best')}: ${T('bestNone')}`;
 
+  renderRanks();
+
   const shop = $('shop');
   shop.textContent = '';
   for (const id in META) {
@@ -143,6 +150,62 @@ function renderTitle() {
     shop.append(row);
   }
 }
+
+function renderRanks() {
+  const ol = $('ranks');
+  ol.textContent = '';
+  $('rankEmpty').hidden = save.ranks.length > 0;
+  $('rankClearBtn').hidden = save.ranks.length === 0;
+  $('rankClearBtn').textContent = T('rankClear');
+  $('rankClearBtn').dataset.armed = '';
+  if ($('nameInput').value !== save.name) $('nameInput').value = save.name;
+  $('nameInput').placeholder = T('rankAnon');
+  save.ranks.forEach((e, i) => {
+    const li = document.createElement('li');
+    if (e === latestRank) li.className = 'latest';
+    const place = document.createElement('span');
+    place.className = 'place';
+    place.textContent = i + 1;
+    const who = document.createElement('span');
+    who.className = 'who';
+    const nm = document.createElement('b');
+    const c = CHARS[e.char];
+    nm.textContent = `${e.won ? '★ ' : ''}${e.name || T('rankAnon')}`;
+    const sub = document.createElement('small');
+    const day = e.date ? new Date(e.date).toLocaleDateString(lang) : '';
+    sub.textContent = `${c ? WEAPONS[c.weapon].icon + ' ' + T('c_' + e.char) : ''}${day ? ' · ' + day : ''}`;
+    if (c) sub.style.color = c.color;
+    who.append(nm, sub);
+    const pts = document.createElement('span');
+    pts.className = 'pts';
+    const sc = document.createElement('b');
+    sc.textContent = e.score.toLocaleString(lang);
+    const det = document.createElement('small');
+    det.textContent = `${fmtTime(e.time)} · Lv ${e.level} · ☠ ${e.kills}`;
+    pts.append(sc, det);
+    li.append(place, who, pts);
+    ol.append(li);
+  });
+}
+$('nameInput').addEventListener('input', (e) => {
+  save.name = e.target.value.trim().slice(0, 12);
+  persist();
+});
+$('nameInput').addEventListener('keydown', (e) => e.stopPropagation());
+$('rankClearBtn').onclick = (e) => {
+  // Two presses instead of a confirm dialog.
+  const b = e.currentTarget;
+  if (!b.dataset.armed) {
+    b.dataset.armed = '1';
+    b.textContent = T('rankClearSure');
+    return;
+  }
+  save.ranks = [];
+  save.best = null;
+  latestRank = null;
+  persist();
+  renderTitle();
+};
 
 for (const tab of document.querySelectorAll('.tabs [data-tab]')) {
   tab.onclick = () => {
@@ -219,6 +282,12 @@ function finalize() {
   save.dust += earned;
   const b = save.best;
   if (!b || game.t > b.time) save.best = { time: game.t, level: game.level, kills: game.kills };
+  const entry = {
+    score: game.score(), time: Math.round(game.t * 10) / 10, level: game.level, kills: game.kills,
+    boss: game.bossIdx, char: game.charId, won: game.bossIdx >= BOSSES_TO_WIN, name: save.name, date: Date.now(),
+  };
+  lastPlace = addRank(save.ranks, entry);
+  latestRank = lastPlace ? entry : null;
   const newly = [];
   for (const id in CHARS) {
     const u = CHARS[id].unlock;
@@ -241,7 +310,12 @@ function endRun(won) {
   show('endlessBtn', won);
   const stats = $('stats');
   stats.textContent = '';
-  const rows = [[T('sTime'), fmtTime(g.t)], [T('sKills'), g.kills], [T('sLevel'), g.level], [T('sDust'), '✦ ' + g.reward()]];
+  const rows = [[T('sScore'), g.score().toLocaleString(lang)], [T('sTime'), fmtTime(g.t)], [T('sKills'), g.kills], [T('sLevel'), g.level], [T('sDust'), '✦ ' + g.reward()]];
+  // A win is banked later (the player may continue), so show where the score stands right now.
+  const place = won ? placeOf(save.ranks, g.score()) : lastPlace;
+  const rr = $('rankResult');
+  rr.hidden = !(place >= 1 && place <= RANK_MAX);
+  rr.textContent = rr.hidden ? '' : '♛ ' + T('rankIn').replace('{n}', place);
   for (const [k, v] of rows) {
     const dt = document.createElement('dt'), dd = document.createElement('dd');
     dt.textContent = k;
@@ -464,7 +538,7 @@ window.addEventListener('keydown', (e) => {
     const i = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);
     if (i >= 0) choose(i % 3);
     else if (e.code === 'KeyR' && !$('rerollBtn').hidden) $('rerollBtn').click();
-  } else if (e.code === 'Enter' && document.activeElement?.tagName !== 'BUTTON') {
+  } else if (e.code === 'Enter' && !['BUTTON', 'INPUT'].includes(document.activeElement?.tagName)) {
     if (mode === 'title') startRun();
     else if (mode === 'over') $('retryBtn').click();
   }

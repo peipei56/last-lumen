@@ -831,6 +831,11 @@ export class Game {
     this.updatePicks(dt);
   }
 
+  /** Ranking score: time survived, kills, level and bosses all count. */
+  score() {
+    return Math.floor(this.t * 10 + this.kills * 5 + this.level * 50 + this.bossIdx * 3000);
+  }
+
   /** Stardust awarded for this run. */
   reward() {
     const base = this.dust + Math.floor(this.t / 12) + Math.floor(this.kills / 25) + this.level;

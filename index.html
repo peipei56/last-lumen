@@ -53,7 +53,12 @@
         <h2 data-i18n="chooseChar"></h2>
         <div id="chars"></div>
         <p id="best" class="mute"></p>
-        <button id="startBtn" type="button" class="primary" data-i18n="start"></button>
+        <div class="row left">
+          <button id="continueBtn" type="button" class="primary" hidden></button>
+          <button id="startBtn" type="button" class="primary" data-i18n="start"></button>
+        </div>
+        <p id="suspNote" class="mute small" data-i18n="suspNote" hidden></p>
+        <p class="mute small" data-i18n="saveNote"></p>
       </div>
       <div class="tabpane" id="tab-shop" hidden>
         <p class="mute" data-i18n="shopLead"></p>
@@ -97,6 +102,7 @@
       <div id="pauseBuild" class="buildlist"></div>
       <div class="row">
         <button id="resumeBtn" type="button" class="primary" data-i18n="resume"></button>
+        <button id="suspendBtn" type="button" class="ghost" data-i18n="suspend"></button>
         <button id="quitBtn" type="button" class="ghost" data-i18n="giveUp"></button>
       </div>
     </div>

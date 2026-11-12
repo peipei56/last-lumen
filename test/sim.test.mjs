@@ -118,3 +118,34 @@ test('damaged ranking data is cleaned up', () => {
   const out = cleanRanks([{ score: 5, time: 1 }, null, { score: 'x' }, { score: 9, time: 2 }]);
   assert.deepEqual(out.map((e) => e.score), [9, 5]);
 });
+
+test('a suspended run restores exactly and continues identically', () => {
+  const step = (g, n) => {
+    for (let i = 0; i < n; i++) {
+      g.update(1 / 60, botInput(g));
+      g.fx.length = 0;
+      while (g.pending > 0) g.apply(g.choices(3)[0]);
+    }
+  };
+  const a = new Game({ seed: 21, charId: 'lumi', meta: { vit: 5, pow: 5 } });
+  for (const id of ['drone', 'orbit', 'mine']) a.weapons.push({ id, lv: 4, cd: 0, ang: 0 });
+  a.t = 170; // crosses the first boss spawn after the snapshot
+  step(a, 60 * 8);
+  const json = JSON.stringify(a.serialize());
+  const b = Game.restore(JSON.parse(json));
+  assert.equal(JSON.stringify(b.serialize()), json, 'restore then serialize is lossless');
+  step(a, 60 * 25);
+  step(b, 60 * 25);
+  assert.equal(b.kills, a.kills);
+  assert.equal(b.p.x, a.p.x);
+  assert.equal(b.p.hp, a.p.hp);
+  assert.equal(b.enemies.length, a.enemies.length);
+  assert.equal(!!b.boss, !!a.boss);
+  assert.ok(json.length < 1_500_000, 'save stays well under browser storage limits: ' + json.length);
+});
+
+test('broken suspended-run data is rejected', () => {
+  assert.throws(() => Game.restore(null));
+  assert.throws(() => Game.restore({ v: 99 }));
+  assert.throws(() => Game.restore({ v: 1, charId: 'nobody', enemies: [], p: {} }));
+});

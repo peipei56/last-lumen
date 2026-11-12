@@ -6,6 +6,12 @@ import {
 } from './data.js';
 import { TAU, mulberry32, SpatialHash } from './util.js';
 
+const SAVE_VERSION = 1;
+const SAVED_FIELDS = [
+  't', 'kills', 'level', 'xp', 'xpNext', 'pending', 'pendingChest', 'won', 'endless', 'dust', 'spawnAcc', 'bossIdx',
+  'bossWarned', 'nextSwarm', 'nextElite', 'rerolls', 'revives', 'weapons', 'passives', 'dmgBy', 'p', 'enemies',
+  'eshots', 'picks', 'zones',
+];
 const PAD = 50; // largest enemy radius, added to broad-phase queries
 
 export class Game {
@@ -829,6 +835,30 @@ export class Game {
     this.updateEnemies(dt);
     this.updateEshots(dt);
     this.updatePicks(dt);
+  }
+
+  /** Plain-data snapshot of the whole run, safe to JSON.stringify. Object links become indexes. */
+  serialize() {
+    const idx = new Map(this.enemies.map((e, i) => [e, i]));
+    const out = { v: SAVE_VERSION, charId: this.charId, meta: this.meta, rng: this.rng.s };
+    for (const k of SAVED_FIELDS) out[k] = this[k];
+    out.boss = this.boss ? idx.get(this.boss) ?? -1 : -1;
+    out.shots = this.shots.map((s) => ({ ...s, hit: s.hit.map((e) => idx.get(e)).filter((i) => i !== undefined), tgt: s.tgt ? idx.get(s.tgt) ?? -1 : -1 }));
+    return out;
+  }
+
+  /** Rebuild a run from `serialize()` output. Throws on data it does not recognise. */
+  static restore(d) {
+    if (!d || d.v !== SAVE_VERSION || !CHARS[d.charId] || !Array.isArray(d.enemies) || !d.p) throw new Error('bad save');
+    const g = new Game({ charId: d.charId, meta: d.meta || {}, seed: 1 });
+    g.rng.s = d.rng | 0;
+    for (const k of SAVED_FIELDS) g[k] = d[k];
+    g.boss = d.boss >= 0 ? g.enemies[d.boss] || null : null;
+    g.shots = d.shots.map((s) => ({ ...s, hit: s.hit.map((i) => g.enemies[i]).filter(Boolean), tgt: s.tgt >= 0 ? g.enemies[s.tgt] || null : null }));
+    g.s = {};
+    g.recalc();
+    if (!Number.isFinite(g.p.x + g.p.y + g.p.hp + g.t)) throw new Error('bad save');
+    return g;
   }
 
   /** Ranking score: time survived, kills, level and bosses all count. */

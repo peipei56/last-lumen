@@ -10,6 +10,7 @@ import { WEAPONS, PASSIVES, CHARS, META, TEXT, metaCost, WEAPON_MAX_LV, PASSIVE_
 const $ = (id) => document.getElementById(id);
 const STEP = 1 / 60;
 const SAVE_KEY = 'last-lumen-save-v1';
+const RUN_KEY = 'last-lumen-run-v1'; // the run in progress, so it survives closing the tab
 
 // ------------------------------------------------------------------ save data
 const save = { dust: 0, meta: {}, unlocked: {}, best: null, lang: null, sound: true, char: 'lumi', ranks: [], name: '' };
@@ -19,6 +20,25 @@ try {
 function persist() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  } catch {}
+}
+function loadRun() {
+  try {
+    const d = JSON.parse(localStorage.getItem(RUN_KEY) || 'null');
+    return d && d.v === 1 && CHARS[d.charId] ? d : null;
+  } catch {
+    return null;
+  }
+}
+function saveRun() {
+  if (!game || finalized || game.over) return;
+  try {
+    localStorage.setItem(RUN_KEY, JSON.stringify(game.serialize()));
+  } catch {}
+}
+function clearRun() {
+  try {
+    localStorage.removeItem(RUN_KEY);
   } catch {}
 }
 let lang = save.lang || ((navigator.language || 'en').startsWith('ja') ? 'ja' : 'en');
@@ -42,6 +62,7 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 let mode = 'title'; // title | play | levelup | pause | dying | over
 let game = null;
 let demo = newDemo();
+let saveT = 0;
 let acc = 0, last = performance.now(), dyingT = 0, finalized = false, earned = 0, choices = [];
 
 function newDemo() {
@@ -107,6 +128,14 @@ function renderTitle() {
   }
   const best = save.best;
   $('best').textContent = best ? `${T('best')}: ${fmtTime(best.time)} · Lv ${best.level} · ☠ ${best.kills}` : `${T('best')}: ${T('bestNone')}`;
+
+  const susp = loadRun();
+  const cb = $('continueBtn'), sb = $('startBtn');
+  cb.hidden = !susp;
+  $('suspNote').hidden = !susp;
+  if (susp) cb.textContent = `${T('resume2')}  ${T('c_' + susp.charId)} · ${fmtTime(susp.t)} · Lv ${susp.level}`;
+  sb.textContent = susp ? T('newRun') : T('start');
+  sb.className = susp ? 'ghost' : 'primary';
 
   renderRanks();
 
@@ -235,19 +264,69 @@ $('soundBtn').onclick = () => {
 };
 
 // ------------------------------------------------------------------ run control
+function beginSession() {
+  renderer.parts.length = renderer.texts.length = renderer.effs.length = 0;
+  finalized = false;
+  acc = 0;
+  saveT = 0;
+  hudCache = {};
+}
+
+/** Resume the suspended run. It opens paused so the player can get their bearings. */
+function continueRun() {
+  const d = loadRun();
+  let g = null;
+  try {
+    g = d && Game.restore(d);
+  } catch {}
+  if (!g) {
+    clearRun();
+    renderTitle();
+    return;
+  }
+  sound.init();
+  sound.startMusic();
+  sound.play('select');
+  game = g;
+  beginSession();
+  renderBuild($('build'));
+  renderBuild($('pauseBuild'));
+  updateHud();
+  setMode('pause');
+}
+
+function suspendRun() {
+  saveRun();
+  game = null;
+  demo = newDemo();
+  renderTitle();
+  setMode('title');
+  sound.setIntensity(0.1);
+}
+
 function startRun() {
   sound.init();
   sound.startMusic();
   sound.play('levelup');
+  // A suspended run is not thrown away: it ends here and its rewards are banked.
+  const old = loadRun();
+  if (old) {
+    try {
+      game = Game.restore(old);
+      finalized = false;
+      finalize();
+    } catch {}
+    clearRun();
+  }
   game = new Game({ charId: save.char, meta: save.meta });
-  renderer.parts.length = renderer.texts.length = renderer.effs.length = 0;
-  finalized = false;
-  acc = 0;
-  hudCache = {};
+  beginSession();
   setMode('play');
   renderBuild($('build'));
+  saveRun();
 }
 $('startBtn').onclick = startRun;
+$('continueBtn').onclick = continueRun;
+$('suspendBtn').onclick = suspendRun;
 $('retryBtn').onclick = () => {
   finalize();
   startRun();
@@ -272,12 +351,14 @@ function pause() {
   if (mode !== 'play') return;
   renderBuild($('pauseBuild'));
   setMode('pause');
+  saveRun();
 }
 
 /** Bank the run's rewards exactly once. */
 function finalize() {
   if (finalized || !game) return;
   finalized = true;
+  clearRun();
   earned = game.reward();
   save.dust += earned;
   const b = save.best;
@@ -518,6 +599,11 @@ function frame(now) {
     }
     if (acc > STEP * 5) acc = 0;
     if (input.padStart) pause();
+    saveT += dt;
+    if (saveT >= 8) {
+      saveT = 0;
+      saveRun();
+    }
     sound.setIntensity(0.25 + Math.min(0.6, game.t / 600) + (game.boss ? 0.2 : 0));
     updateHud();
   } else if (mode === 'dying') {
@@ -539,14 +625,18 @@ window.addEventListener('keydown', (e) => {
     if (i >= 0) choose(i % 3);
     else if (e.code === 'KeyR' && !$('rerollBtn').hidden) $('rerollBtn').click();
   } else if (e.code === 'Enter' && !['BUTTON', 'INPUT'].includes(document.activeElement?.tagName)) {
-    if (mode === 'title') startRun();
+    if (mode === 'title') (loadRun() ? continueRun : startRun)();
     else if (mode === 'over') $('retryBtn').click();
   }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pause();
+  if (document.hidden) {
+    pause();
+    saveRun();
+  }
   last = performance.now();
 });
+window.addEventListener('pagehide', saveRun);
 window.addEventListener('resize', () => renderer.resize());
 if (typeof ResizeObserver === 'function') new ResizeObserver(() => renderer.resize()).observe(canvas);
 // Browsers only allow audio after a gesture, so the title music starts on the first tap or key.

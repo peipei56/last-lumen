@@ -102,6 +102,9 @@ export const TEXT = {
   ja: {
     tagline: '闇に呑まれた宙域で、最後の光として生き残れ。',
     start: '出撃',
+    resume2: 'つづきから', newRun: '新しく出撃', suspend: '中断してタイトルへ',
+    suspNote: '中断中の出撃があります。新しく出撃すると、その結果が確定して星屑とランキングに反映されます。',
+    saveNote: '進行状況はこの端末のブラウザに自動で保存されます。',
     tabRun: '出撃', tabShop: '強化', tabRank: 'ランキング', tabHelp: '遊び方',
     rankName: 'プレイヤー名', rankAnon: '名無し', rankEmpty: 'まだ記録がありません。出撃して最初の記録を残そう。',
     rankNote: '上位10件をこのブラウザに保存します。', rankIn: '{n}位にランクイン', rankClear: '記録を消す', rankClearSure: 'もう一度押すと消去',
@@ -162,6 +165,9 @@ export const TEXT = {
   en: {
     tagline: 'The void has swallowed everything. Be the last light.',
     start: 'Launch',
+    resume2: 'Continue', newRun: 'New run', suspend: 'Save and quit to title',
+    suspNote: 'You have a suspended run. Starting a new one ends it and banks its stardust and ranking.',
+    saveNote: 'Progress is saved automatically in this device\'s browser.',
     tabRun: 'Launch', tabShop: 'Upgrades', tabRank: 'Ranking', tabHelp: 'How to play',
     rankName: 'Player name', rankAnon: 'Anonymous', rankEmpty: 'No runs yet. Launch to set the first record.',
     rankNote: 'The top 10 runs are saved in this browser.', rankIn: 'Ranked #{n}', rankClear: 'Clear records', rankClearSure: 'Press again to erase',
